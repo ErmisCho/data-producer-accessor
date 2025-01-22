@@ -8,6 +8,19 @@ from dotenv import load_dotenv
 import logging
 
 
+class RaiseOnErrorHandler(logging.Handler):
+    """
+    A custom logging handler that raises an exception
+    when a log with level >= ERROR is emitted.
+    """
+
+    def emit(self, record):
+        if record.levelno >= logging.ERROR:
+            # You can raise a specific exception type (RuntimeError, ValueError, etc.)
+            # and possibly include the log message.
+            raise RuntimeError(record.getMessage())
+
+
 def setup_logging():
     """Sets up logging with a configurable log level."""
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -20,6 +33,10 @@ def setup_logging():
             logging.StreamHandler()  # Also log to the console
         ]
     )
+
+    logger = logging.getLogger()
+    logger.addHandler(RaiseOnErrorHandler())
+
     logging.info("Initiating ...")
     logging.info(f"Logging initialized with level: {log_level}")
 
