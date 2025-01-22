@@ -43,15 +43,40 @@ def setup_logging():
 
 def get_db_configuration():
     """Gets the user configured Database configuration."""
-    load_dotenv(dotenv_path=".env")
-    DB_CONFIG = {
-        "dbname": os.getenv("DB_NAME"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "host": os.getenv("DB_HOST"),
-        "port": int(os.getenv("DB_PORT")),
-        "table_name": os.getenv("DB_TABLE_NAME")
+    env_file_path = ".env"
+    if not os.path.isfile(env_file_path):
+        raise FileNotFoundError(
+            f"No .env file found at the path: {env_file_path}")
+    load_dotenv(dotenv_path=env_file_path)
+
+    # Map each required .env variable to a key in the final DB_CONFIG dictionary.
+    # The key on the left is the .env name; the value on the right is how it will appear in DB_CONFIG.
+    env_to_config_map = {
+        "DB_NAME": "dbname",
+        "DB_USER": "user",
+        "DB_PASSWORD": "password",
+        "DB_HOST": "host",
+        "DB_PORT": "port",
+        "DB_TABLE_NAME": "table_name"
     }
+
+    DB_CONFIG = {}
+
+    # Validate and build in one loop
+    for env_var, config_key in env_to_config_map.items():
+        value = os.getenv(env_var)
+        if not value:  # Check both None and empty string
+            raise ValueError(
+                f"The {env_var} environment variable is missing or empty")
+
+        DB_CONFIG[config_key] = value
+
+    # Convert DB_PORT to an integer
+    try:
+        DB_CONFIG["port"] = int(DB_CONFIG["port"])
+    except ValueError:
+        raise ValueError("DB_PORT must be a valid integer")
+
     return DB_CONFIG
 
 
