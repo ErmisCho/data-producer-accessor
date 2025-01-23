@@ -7,12 +7,25 @@ use std::time::SystemTime;
 use tokio_postgres::NoTls;
 
 #[derive(Serialize)]
+struct HealthStatus {
+    status: String,
+}
+
+async fn health_check() -> impl Responder {
+    web::Json(HealthStatus {
+        status: "Service is up and running".to_string(),
+    })
+}
+
+
+#[derive(Serialize)]
 struct Signal {
     id: i32,
     signal_type: String,
     value: f64,
     timestamp: NaiveDateTime,
 }
+
 
 async fn fetch_signals(signal_type: web::Path<String>) -> impl Responder {
     dotenv().ok(); // Load environment variables from .env file
@@ -86,7 +99,10 @@ async fn main() -> std::io::Result<()> {
     println!("Starting server on {}:{}", host, port);
 
     HttpServer::new(|| {
-        App::new().route("/signals/{signal_type}", web::get().to(fetch_signals))
+        App::new()
+            .route("/health",web::get().to(health_check))
+            .route("/signals/{signal_type}",web::get().to(fetch_signals))
+
     })
     .bind((host.as_str(), port))?
     .run()
