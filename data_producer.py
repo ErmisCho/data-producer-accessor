@@ -2,6 +2,7 @@ import time
 import random
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from psycopg2.pool import SimpleConnectionPool
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -80,6 +81,24 @@ def get_db_configuration():
     return DB_CONFIG
 
 
+def setup_connection_pool():
+    """Sets up a connection pool for PostgreSQL."""
+    try:
+        return SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            dbname=DB_CONFIG["dbname"],
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            host=DB_CONFIG["host"],
+            port=DB_CONFIG["port"]
+        )
+    except psycopg2.DatabaseError as e:
+        error_message = f"Database error during connection pool setup: {e}"
+        print(error_message)
+        raise
+
+
 def create_database():
     """Creates the database if it doesn't exist"""
     try:
@@ -108,15 +127,10 @@ def create_database():
         logging.error(f"Error creating database: {e}")
 
 
-def create_table():
+def create_table(connection_pool):
     """Creates the table schema"""
     try:
-        conn = psycopg2.connect(
-            dbname=DB_CONFIG["dbname"],
-            user=DB_CONFIG["user"],
-            password=DB_CONFIG["password"],
-            host=DB_CONFIG["host"],
-            port=DB_CONFIG["port"])
+        conn = connection_pool.getconn()
         cursor = conn.cursor()
 
         table_name = DB_CONFIG["table_name"]
@@ -137,20 +151,17 @@ def create_table():
         logging.info(f"Table {table_name} is ready.")
     except Exception as e:
         logging.error(f"Error creating table: {e}")
+    finally:
+        if conn:
+            connection_pool.putconn(conn)
 
 
-def insert_data(signal_type, value):
+def insert_data(connection_pool, signal_type, value):
     """Inserts data into the database"""
     try:
-        conn = psycopg2.connect(
-            dbname=DB_CONFIG["dbname"],
-            user=DB_CONFIG["user"],
-            password=DB_CONFIG["password"],
-            host=DB_CONFIG["host"],
-            port=DB_CONFIG["port"])
-        table_name = DB_CONFIG["table_name"]
-
+        conn = connection_pool.getconn()
         cursor = conn.cursor()
+        table_name = DB_CONFIG["table_name"]
         query = f"""
         INSERT INTO {table_name} (signal_type, value, timestamp)
         VALUES (%s, %s, %s);
@@ -161,24 +172,28 @@ def insert_data(signal_type, value):
         conn.close()
     except Exception as e:
         logging.error(f"Error inserting data: {e}")
+    finally:
+        if conn:
+            connection_pool.putconn(conn)
 
 
-def generate_data():
+def generate_data(connection_pool):
     """Generates data to be later insereted in the table"""
     while True:
         try:
             # State change every 1-5 seconds
             time.sleep(random.uniform(1, 5))
-            insert_data("state_change", random.choice([0, 1]))
+            insert_data(connection_pool, "state_change", random.choice([0, 1]))
 
             # Error every 10-30 seconds
             if random.random() < 0.1:
                 # The error codes are between 1-100
-                insert_data("error", random.randint(1, 100))
+                insert_data(connection_pool, "error", random.randint(1, 100))
 
             # Power consumption every 0.01 seconds
             for _ in range(100):  # Simulate 1-second batch
-                insert_data("power", random.uniform(100.0, 500.0))
+                insert_data(connection_pool, "power",
+                            random.uniform(100.0, 500.0))
                 time.sleep(0.01)
         except KeyboardInterrupt:
             logging.warning("Data generation stopped.")
@@ -191,6 +206,7 @@ if __name__ == "__main__":
     DB_CONFIG = get_db_configuration()
 
     create_database()
-    create_table()
-    generate_data()
+    connection_pool = setup_connection_pool()
+    create_table(connection_pool)
+    generate_data(connection_pool)
     logging.info("Completed executing.")
