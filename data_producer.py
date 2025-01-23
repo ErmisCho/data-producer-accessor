@@ -84,7 +84,7 @@ def create_database():
     """Creates the database if it doesn't exist"""
     try:
         conn = psycopg2.connect(
-            dbname=DB_CONFIG["dbname"],
+            dbname="postgres",  # need to connect to a pre-existing Database before creating one
             user=DB_CONFIG["user"],
             password=DB_CONFIG["password"],
             host=DB_CONFIG["host"],
