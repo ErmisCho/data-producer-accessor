@@ -201,12 +201,19 @@ def generate_data(connection_pool):
 
 
 if __name__ == "__main__":
+    try:
+        setup_logging()
+        DB_CONFIG = get_db_configuration()
 
-    setup_logging()
-    DB_CONFIG = get_db_configuration()
+        create_database()
+        connection_pool = setup_connection_pool()
+        create_table(connection_pool)
+        generate_data(connection_pool)
 
-    create_database()
-    connection_pool = setup_connection_pool()
-    create_table(connection_pool)
-    generate_data(connection_pool)
-    logging.info("Completed executing.")
+    except Exception as e:
+        logging.critical(f"Unexpected error occurred: {e}")
+    finally:
+        if connection_pool:
+            connection_pool.closeall()
+            logging.info("Connection pool closed.")
+            logging.info("Completed executing.")
