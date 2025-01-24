@@ -95,7 +95,7 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting server on {}:{}", host, port);
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .route("/health",web::get().to(health_check))
@@ -103,6 +103,15 @@ async fn main() -> std::io::Result<()> {
 
     })
     .bind((host.as_str(), port))?
-    .run()
-    .await
+    .run();
+
+    // Graceful shutdown: Listen for Ctrl+C or termination signals
+    tokio::select! {
+        _ = server => {}, // If the server exits for any reason
+        _ = tokio::signal::ctrl_c() => {
+            println!("Shutting down server gracefully ...");
+        },
+    }
+
+    Ok(())
 }
