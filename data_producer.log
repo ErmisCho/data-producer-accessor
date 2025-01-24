@@ -1,0 +1,14 @@
+[INFO] 2025-01-24 09:57:03,498 Initiating ...
+[INFO] 2025-01-24 09:57:03,498 Logging initialized with level: INFO
+[INFO] 2025-01-24 09:57:03,561 Database 'machine_data' already exists.
+[INFO] 2025-01-24 09:57:03,612 Table machine_signals is ready.
+[WARNING] 2025-01-24 10:03:13,289 Data generation stopped.
+[INFO] 2025-01-24 10:03:13,289 Connection pool closed.
+[INFO] 2025-01-24 10:03:13,290 Completed executing.
+[INFO] 2025-01-24 10:03:19,278 Initiating ...
+[INFO] 2025-01-24 10:03:19,278 Logging initialized with level: INFO
+[INFO] 2025-01-24 10:03:19,381 Database 'machine_data' already exists.
+[INFO] 2025-01-24 10:03:19,483 Table machine_signals is ready.
+[WARNING] 2025-01-24 10:19:36,668 Data generation stopped.
+[INFO] 2025-01-24 10:19:36,668 Connection pool closed.
+[INFO] 2025-01-24 10:19:36,668 Completed executing.
