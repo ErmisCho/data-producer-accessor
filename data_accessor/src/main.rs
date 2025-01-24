@@ -67,6 +67,7 @@ async fn fetch_signals(pool: web::Data<Pool>,
             }
         })
         .collect();
+    println!("Fetched data");
 
     web::Json(signals)
 }
